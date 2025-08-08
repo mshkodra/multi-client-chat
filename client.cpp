@@ -16,7 +16,8 @@ int main() {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(8079); // Use the same port as server
 
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+    // Change this IP to your server machine's network IP
+    if (inet_pton(AF_INET, "192.168.86.69", &serv_addr.sin_addr) <= 0) {
         std::cerr << "Invalid address/ Address not supported" << std::endl;
         return 1;
     }
