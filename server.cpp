@@ -23,9 +23,9 @@ int main() {
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
     
-    // Use PORT environment variable (Railway) or default to 8079
+    // Use PORT environment variable (Railway) or default to 5432 for TCP proxy
     const char* port_env = std::getenv("PORT");
-    int port = port_env ? std::atoi(port_env) : 8079;
+    int port = port_env ? std::atoi(port_env) : 5432;
     serverAddress.sin_port = htons(port);
     serverAddress.sin_addr.s_addr = INADDR_ANY;
 

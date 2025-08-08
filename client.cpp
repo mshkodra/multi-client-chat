@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <cstring>
+#include <netdb.h>
 
 int main() {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -12,22 +13,30 @@ int main() {
         return 1;
     }
 
-    sockaddr_in serv_addr;
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(8080); // Railway uses port 8080
-
-    // Connect to Railway deployment
-    if (inet_pton(AF_INET, "35.212.162.221", &serv_addr.sin_addr) <= 0) {
-        std::cerr << "Invalid address/ Address not supported" << std::endl;
+    // Use Railway's specific TCP proxy domain and port
+    const char* hostname = "shortline.proxy.rlwy.net";
+    const char* port = "15231";
+    
+    struct addrinfo hints, *result;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    
+    int status = getaddrinfo(hostname, port, &hints, &result);
+    if (status != 0) {
+        std::cerr << "getaddrinfo failed: " << gai_strerror(status) << std::endl;
         return 1;
     }
-
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        std::cout << "Connection Failed" << std::endl;
+    
+    if (connect(sock, result->ai_addr, result->ai_addrlen) < 0) {
+        std::cerr << "Connection Failed" << std::endl;
+        freeaddrinfo(result);
         return 1;
     }
+    
+    freeaddrinfo(result);
 
-    std::cout << "Connected to Railway server!" << std::endl;
+    std::cout << "Connected to Railway server via TCP proxy!" << std::endl;
 
     fd_set readfds;
     int maxfd = (sock > fileno(stdin)) ? sock : fileno(stdin);

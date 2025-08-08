@@ -13,8 +13,8 @@ RUN g++ -std=c++17 -Wall -Wextra -O2 -o server server.cpp
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Expose the port
-EXPOSE 8080
+# Expose the port for TCP proxy
+EXPOSE 5432
 
 # Start the server
 CMD ["./server"] 
