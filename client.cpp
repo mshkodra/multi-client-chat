@@ -14,18 +14,20 @@ int main() {
 
     sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(8079); // Use the same port as server
+    serv_addr.sin_port = htons(8080); // Railway uses port 8080
 
-    // Change this IP to your server machine's network IP
-    if (inet_pton(AF_INET, "192.168.86.69", &serv_addr.sin_addr) <= 0) {
+    // Connect to Railway deployment
+    if (inet_pton(AF_INET, "35.212.162.221", &serv_addr.sin_addr) <= 0) {
         std::cerr << "Invalid address/ Address not supported" << std::endl;
         return 1;
     }
 
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        std::cerr << "Connection Failed" << std::endl;
+        std::cout << "Connection Failed" << std::endl;
         return 1;
     }
+
+    std::cout << "Connected to Railway server!" << std::endl;
 
     fd_set readfds;
     int maxfd = (sock > fileno(stdin)) ? sock : fileno(stdin);

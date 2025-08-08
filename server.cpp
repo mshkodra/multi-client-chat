@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <vector>
 #include <sys/select.h>
+#include <cstdlib>
 
 int main() {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -21,8 +22,14 @@ int main() {
     
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(8079);
+    
+    // Use PORT environment variable (Railway) or default to 8079
+    const char* port_env = std::getenv("PORT");
+    int port = port_env ? std::atoi(port_env) : 8079;
+    serverAddress.sin_port = htons(port);
     serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+    std::cout << "Starting server on port " << port << std::endl;
 
     if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
         std::cerr << "Bind failed" << std::endl;
@@ -35,6 +42,8 @@ int main() {
         close(serverSocket);
         return 1;
     }
+
+    std::cout << "Server listening on port " << port << std::endl;
 
     std::vector<int> clientSockets;
     fd_set readfds;

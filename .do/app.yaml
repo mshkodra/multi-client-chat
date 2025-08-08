@@ -1,0 +1,15 @@
+name: cpp-chat-server
+services:
+- name: chat-server
+  source_dir: /
+  github:
+    repo: YOUR_GITHUB_USERNAME/mutli-client-chat
+    branch: main
+  dockerfile_path: Dockerfile
+  run_command: ./server
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  http_port: 8080
+  envs:
+  - key: PORT
+    value: "8080" 

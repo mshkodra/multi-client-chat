@@ -1,0 +1,11 @@
+client
+client.o
+server.o
+*.o
+.DS_Store
+.git/
+.gitignore
+README.md
+railway.json
+.railwayignore
+.DS_Store 

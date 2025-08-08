@@ -12,6 +12,9 @@ EXECUTABLES = $(SOURCES:.cpp=)
 # Default target - build all executables
 all: $(EXECUTABLES)
 
+# Railway deployment target - build only server
+railway: server
+
 # Rule to build each executable from its corresponding cpp file
 %: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
@@ -21,12 +24,13 @@ clean:
 	rm -f $(EXECUTABLES) $(OBJECTS)
 
 # Phony targets
-.PHONY: all clean
+.PHONY: all clean railway
 
 # Help target
 help:
 	@echo "Available targets:"
 	@echo "  all     - Compile all C++ files"
+	@echo "  railway - Compile server for Railway deployment"
 	@echo "  clean   - Remove all compiled files"
 	@echo "  help    - Show this help message"
 	@echo ""
