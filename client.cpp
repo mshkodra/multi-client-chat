@@ -6,17 +6,39 @@
 #include <cstring>
 #include <netdb.h>
 
-int main() {
+int main(int argc, char* argv[]) {
+    // Default to localhost
+    const char* hostname = "127.0.0.1";
+    const char* port = "5432";
+    
+    // Check command line arguments
+    if (argc > 1) {
+        std::string arg = argv[1];
+        if (arg == "local" || arg == "l") {
+            hostname = "127.0.0.1";
+            port = "5432";
+            std::cout << "Connecting to local server..." << std::endl;
+        } else if (arg == "railway" || arg == "r") {
+            hostname = "shortline.proxy.rlwy.net";
+            port = "15231";
+            std::cout << "Connecting to Railway server..." << std::endl;
+        } else {
+            std::cout << "Usage: " << argv[0] << " [local|railway]" << std::endl;
+            std::cout << "  local (or l)  - Connect to localhost:5432" << std::endl;
+            std::cout << "  railway (or r) - Connect to Railway deployment" << std::endl;
+            std::cout << "  no args       - Connect to localhost:5432 (default)" << std::endl;
+            return 1;
+        }
+    } else {
+        std::cout << "Connecting to local server (default)..." << std::endl;
+    }
+
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         std::cerr << "Socket creation error" << std::endl;
         return 1;
     }
 
-    // Use Railway's specific TCP proxy domain and port
-    const char* hostname = "shortline.proxy.rlwy.net";
-    const char* port = "15231";
-    
     struct addrinfo hints, *result;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -29,14 +51,14 @@ int main() {
     }
     
     if (connect(sock, result->ai_addr, result->ai_addrlen) < 0) {
-        std::cerr << "Connection Failed" << std::endl;
+        std::cerr << "Connection Failed to " << hostname << ":" << port << std::endl;
         freeaddrinfo(result);
         return 1;
     }
     
     freeaddrinfo(result);
 
-    std::cout << "Connected to Railway server via TCP proxy!" << std::endl;
+    std::cout << "Connected to server at " << hostname << ":" << port << std::endl;
 
     fd_set readfds;
     int maxfd = (sock > fileno(stdin)) ? sock : fileno(stdin);
