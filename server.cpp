@@ -5,6 +5,8 @@
 #include <vector>
 #include <sys/select.h>
 #include <cstdlib>
+#include <map>
+#include <string>
 
 int main() {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -46,6 +48,7 @@ int main() {
     std::cout << "Server listening on port " << port << std::endl;
 
     std::vector<int> clientSockets;
+    std::map<int, std::string> clientUsernames; 
     fd_set readfds;
 
     while (true) {
@@ -72,7 +75,7 @@ int main() {
                 std::cerr << "accept error" << std::endl;
             } else {
                 clientSockets.push_back(clientSocket);
-                std::cout << "New client connected" << std::endl;
+                std::cout << "New client connected (waiting for username)" << std::endl;
             }
         }
 
@@ -83,15 +86,55 @@ int main() {
                 int valread = recv(clientSocket, buffer, 1024, 0);
                 if (valread > 0) {
                     buffer[valread] = '\0';
-                    std::cout << "Message from client: " << buffer << std::endl;
+                    
+                    // Check if this is a username registration (first message)
+                    if (clientUsernames.find(clientSocket) == clientUsernames.end()) {
+                        // This is the username
+                        std::string username = buffer;
+                        clientUsernames[clientSocket] = username;
+                        std::cout << "User '" << username << "' joined the chat" << std::endl;
+                        
+                        // Notify all other clients about the new user
+                        std::string joinMessage = username + " joined the chat";
+                        for (int otherSocket : clientSockets) {
+                            if (otherSocket != clientSocket) {
+                                send(otherSocket, joinMessage.c_str(), joinMessage.length(), 0);
+                            }
+                        }
+                    } else {
+                        // This is a chat message
+                        std::string username = clientUsernames[clientSocket];
+                        std::string message = username + ": " + buffer;
+                        std::cout << message << std::endl;
+                        
+                        // Broadcast to all other clients
+                        for (int otherSocket : clientSockets) {
+                            if (otherSocket != clientSocket) {
+                                send(otherSocket, message.c_str(), message.length(), 0);
+                            }
+                        }
+                    }
                     ++it;
                 } else if (valread == 0) {
-                    std::cout << "Client disconnected" << std::endl;
+                    // Client disconnected
+                    std::string username = clientUsernames[clientSocket];
+                    std::cout << "User '" << username << "' disconnected" << std::endl;
+                    
+                    // Notify other clients about the disconnection
+                    std::string leaveMessage = username + " left the chat";
+                    for (int otherSocket : clientSockets) {
+                        if (otherSocket != clientSocket) {
+                            send(otherSocket, leaveMessage.c_str(), leaveMessage.length(), 0);
+                        }
+                    }
+                    
                     close(clientSocket);
+                    clientUsernames.erase(clientSocket);
                     it = clientSockets.erase(it);
                 } else {
                     std::cerr << "recv error" << std::endl;
                     close(clientSocket);
+                    clientUsernames.erase(clientSocket);
                     it = clientSockets.erase(it);
                 }
             } else {

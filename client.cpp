@@ -7,30 +7,36 @@
 #include <netdb.h>
 
 int main(int argc, char* argv[]) {
-    // Default to localhost
-    const char* hostname = "127.0.0.1";
-    const char* port = "5432";
+    // Check for exactly 2 arguments: username and location
+    if (argc != 3) {
+        std::cout << "Usage: " << argv[0] << " <username> <location>" << std::endl;
+        std::cout << "  username - Your chat username" << std::endl;
+        std::cout << "  location - 'local' or 'railway'" << std::endl;
+        std::cout << "Examples:" << std::endl;
+        std::cout << "  " << argv[0] << " Alice local" << std::endl;
+        std::cout << "  " << argv[0] << " Bob railway" << std::endl;
+        return 1;
+    }
+
+    std::string username = argv[1];
+    std::string location = argv[2];
     
-    // Check command line arguments
-    if (argc > 1) {
-        std::string arg = argv[1];
-        if (arg == "local" || arg == "l") {
-            hostname = "127.0.0.1";
-            port = "5432";
-            std::cout << "Connecting to local server..." << std::endl;
-        } else if (arg == "railway" || arg == "r") {
-            hostname = "shortline.proxy.rlwy.net";
-            port = "15231";
-            std::cout << "Connecting to Railway server..." << std::endl;
-        } else {
-            std::cout << "Usage: " << argv[0] << " [local|railway]" << std::endl;
-            std::cout << "  local (or l)  - Connect to localhost:5432" << std::endl;
-            std::cout << "  railway (or r) - Connect to Railway deployment" << std::endl;
-            std::cout << "  no args       - Connect to localhost:5432 (default)" << std::endl;
-            return 1;
-        }
+    // Set connection details based on location
+    const char* hostname;
+    const char* port;
+    
+    if (location == "local" || location == "l") {
+        hostname = "127.0.0.1";
+        port = "5432";
+        std::cout << "Connecting to local server..." << std::endl;
+    } else if (location == "railway" || location == "r") {
+        hostname = "shortline.proxy.rlwy.net";
+        port = "15231";
+        std::cout << "Connecting to Railway server..." << std::endl;
     } else {
-        std::cout << "Connecting to local server (default)..." << std::endl;
+        std::cout << "Invalid location: '" << location << "'" << std::endl;
+        std::cout << "Use 'local' or 'railway'" << std::endl;
+        return 1;
     }
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -59,6 +65,10 @@ int main(int argc, char* argv[]) {
     freeaddrinfo(result);
 
     std::cout << "Connected to server at " << hostname << ":" << port << std::endl;
+    std::cout << "Joining chat as: " << username << std::endl;
+
+    // Send username as first message to register
+    send(sock, username.c_str(), username.length(), 0);
 
     fd_set readfds;
     int maxfd = (sock > fileno(stdin)) ? sock : fileno(stdin);
@@ -79,7 +89,8 @@ int main(int argc, char* argv[]) {
             char buffer[1024] = {0};
             int valread = recv(sock, buffer, 1024, 0);
             if (valread > 0) {
-                std::cout << "Message from server: " << buffer << std::endl;
+                buffer[valread] = '\0';
+                std::cout << buffer << std::endl;
             } else if (valread == 0) {
                 std::cout << "Server disconnected. Exiting client." << std::endl;
                 break;
